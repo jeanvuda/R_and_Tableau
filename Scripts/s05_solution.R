@@ -5,6 +5,11 @@ source('~/01_Okaki/02_CPSA/Tableau Tabular/R/Scripts/s01_Functions.R')
 
 # Get the file and process it
 rootnode<-make_rootnodes(wb='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Tableau Tabular\\Test\\wb1\\wb20160713.twb')
+# Or 
+wb='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Tableau Tabular\\Test\\wb1\\wb20160623.twb'
+library("XML")
+rootnode <- xmlRoot(xmlParse(file = wb))
+xmlAttrs(rootnode)
 
 # Generate list of parameters
 ca<-data.table::data.table(get_vars(proc=rootnode, parameter=TRUE)[1])

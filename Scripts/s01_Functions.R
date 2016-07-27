@@ -26,7 +26,14 @@ conv.tabl<-function(x=filed, lisnum){
 }
 
 
-
+# Get the rootnode of a tableau workbook's XML blob
+# Some steps in this function are unnecessary
+# You can parse tableau workbook (*.twb) directly by the following code
+# wb='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Tableau Tabular\\Test\\wb1\\wb20160623.twb'
+# library("XML")
+# rootnode <- xmlRoot(xmlParse(file = wb))
+# xmlAttrs(rootnode)
+# This function creates rootnode object in memory
 make_rootnodes<-function(wb='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Tableau Tabular\\Test\\wb1\\wb20160623.twb'){
   tempd<-tempdir()
   fext<-paste0(".", sub('.*\\.','',wb))
@@ -40,7 +47,10 @@ make_rootnodes<-function(wb='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Ta
   return(rootnode)
 }
 
-
+# Get the list of parameters from the XML blob
+# Pay attention to number of datasources in the file. You can find out using: 
+# xpathSApply(rootnode[[3]], ".//datasource", xmlGetAttr, "caption")
+# This function assumes the file has two dataconnections and get the list from 2nd (note it uses #3)
 get_vars<-function(proc=rootnode, parameter=TRUE){
   # find out how many datasources
   #for(yy in 2:length(xpathSApply(rootnode[[3]], ".//datasource", xmlGetAttr, "caption")){
@@ -63,6 +73,7 @@ get_vars<-function(proc=rootnode, parameter=TRUE){
   })
 }
 
+# This function creates the folder structure used in Tableau
 get_folder<-function(){
   cc<-getNodeSet(rootnode[[3]], ".//folder")
   data.table::rbindlist(lapply(cc, function(x) {
@@ -73,7 +84,7 @@ get_folder<-function(){
   }), fill=TRUE)
 }
 
-
+# Write the data to excel workbook (template)
 write_to_excel<-function(template='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Tableau Tabular\\Documentation\\Template.xlsx',
                          ffinal="C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Tableau Tabular\\Documentation\\Tables_New_1.xlsx",
                          objects=obje){
