@@ -8,6 +8,8 @@ Please feel free to add any functions you may have developed.
 
 Here the list of features I am planning to explore and add:
 
-1) Get the list of actions, workbook properties, rows-columns details, etc
-2) Find a way to delete a dashboard or workbook from a tableau workbook
-3) Find a way to feed a change to workbook/s 
++ Get the list of actions, workbook properties, rows-columns details, etc
++ Find a way to delete a dashboard or workbook from a tableau workbook
++ Find a way to feed a change to workbook/s 
+
+
