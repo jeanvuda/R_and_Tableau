@@ -53,6 +53,8 @@ cd<-merge(ce, cb[[2]], by.x="var", by.y="name", all=TRUE)
 cd<-lapply(c("dimension", "measure"), function(x){
   cd[role.y==x & is.na(class),.(DS, role.y, folder.name.x, caption, datatype, var)]})
 
+ab<-get_actions()
+wbs<-get_worksheet()
 
 # For reporting parameters
 # Role, Folder, Caption, datatype, etc
@@ -65,9 +67,12 @@ Calculated.fields<-data.table::rbindlist(cc, fill=TRUE);rm(cc)
 Measures<-cd[[2]]
 Dimensions<-cd[[1]];rm(cd)
 Parameters<-ca;rm(ca)
+Actions<-ab;rm(ab)
+WorkBooks<-wbs;rm(wbs)
 
 obje<-list(Measures=Measures, Dimensions=Dimensions, 
-           Parameters=Parameters, Calculated.fields=Calculated.fields)
+           Parameters=Parameters, Calculated.fields=Calculated.fields,
+           Actions=Actions, WorkBooks=WorkBooks)
 
 write_to_excel()
 

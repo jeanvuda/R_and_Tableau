@@ -96,3 +96,32 @@ write_to_excel<-function(template='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CP
   removeSheet(tmp, sheet="Set")
   saveWorkbook(tmp, ffinal)}
 
+
+# This function gets the list of actions and associated attributes in the workbook
+get_actions<-function(){
+  cc<-getNodeSet(rootnode[[5]], ".//action")
+  #x<-cc[[1]]
+  z<-data.table::rbindlist(lapply(cc, function(x) {
+    y<-t(xpathSApply(x, ".", xmlAttrs))
+    r<-t(xpathSApply(x, ".//activation", xmlAttrs)) # works
+    s<-t(xpathSApply(x, ".//source",xmlAttrs)) #works
+    t<-t(xpathSApply(x, ".//link",xmlAttrs)) #works
+    data.frame(y,r,s,t)
+  }),fill = TRUE)
+  return(z)
+}
+
+
+# This function gets the list of worksheets and their X,Y axes
+get_worksheet<-function(){
+  cc<-getNodeSet(rootnode[[6]], ".//worksheet")
+  #x<-cc[[1]]
+  z<-data.table::rbindlist(lapply(cc, function(x) {
+    y<-t(xpathSApply(x, ".", xmlAttrs))
+    title<-paste(t(xpathSApply(x, ".//layout-options//title//formatted-text//run", xmlValue)), collapse='') # Need to be cleaned
+    tooltip<-t(xpathSApply(x, ".//table//tooltip-style", xmlAttrs)) #works
+    cols<-xpathSApply(x, ".//table//cols", xmlValue) # Needs cleaning
+    rows<-xpathSApply(x, ".//table//rows", xmlValue) # Needs cleaning
+    data.frame(y,title, tooltip, cols, rows)
+  }),fill = TRUE)
+}
