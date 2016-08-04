@@ -14,8 +14,7 @@ conv.tabl<-function(x=filed, lisnum){
   
   namess<-c("caption", "datatype", "name", "role")
 
-  fp<-plyr::llply(namess, 
-                  function(x) xml_attr( fp, x))
+  fp<-plyr::llply(namess, function(x) xml_attr( fp, x))
   
   fp[[length(fp)+1]]<-xml_attr(baz[1], attr="name")
 
@@ -47,35 +46,59 @@ make_rootnodes<-function(wb='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CPSA\\Ta
   return(rootnode)
 }
 
-# Get the list of parameters from the XML blob
+# Get the list of parameters/variables/calculated dields from the XML blob
 # Pay attention to number of datasources in the file. You can find out using: 
-# xpathSApply(rootnode[[3]], ".//datasource", xmlGetAttr, "caption")
-# This function assumes the file has two dataconnections and get the list from 2nd (note it uses #3)
-get_vars<-function(proc=rootnode, parameter=TRUE){
-  # find out how many datasources
-  #for(yy in 2:length(xpathSApply(rootnode[[3]], ".//datasource", xmlGetAttr, "caption")){
-  lapply(2:length(xpathSApply(rootnode[[3]], ".//datasource", xmlGetAttr, "caption")), function(yy) {  
-    yy<-ifelse(parameter, 1,yy)
-    nn<-ifelse(parameter, 1,yy)
-    cc<-getNodeSet(proc[[3]][[nn]], ".//column")
-    ca<-data.table::rbindlist(lapply(cc, function(x) {
-      
-      DS<-xmlAttrs(proc[[3]][[yy]])['caption']
-      ac<-t(xpathSApply(x, paste0(".//calculation"), xmlAttrs))
-      ad<-t(xpathSApply(x, paste0(".//range"), xmlAttrs))
-      ab<-t(xpathSApply(x, paste0("."), xmlAttrs))
-      ae<-t(xpathSApply(x, paste0(".//members//member"), xmlAttrs))
-      if(nn==1) data.frame(ab, ad, ae) else data.frame( DS, ab, ac)
-    }), fill=TRUE)
-    ca[is.na(caption), caption:=gsub("\\[|\\]","",name)]
-    ca[,caption:=paste0("[",caption,"]")]
-    return(ca)
+# xpathSApply(rootnode[[4]], ".//datasource", xmlGetAttr, "caption")
+get_vars<-function(proc=rootnode){
+  # Get the node names & find which one is datasource
+  nodenames<-sapply(1:length(xmlChildren(proc)), function(x) {#print(x)
+    xmlName(proc[[x]])})
+  xy<-which(nodenames=='datasources')
+  # Find out how many datasources are connected
+  nds<-length(xpathSApply(proc[[xy]], ".//datasource", xmlGetAttr, "caption"))
+  # Get parameters first 
+  # get fomulas/measures/dimensions from all other datasources
+  ca<-lapply(1:nds, function(nn) { #print(nn)})
+    cc<-getNodeSet(proc[[xy]][[nn]], ".//column")
+    data.table::rbindlist(lapply(cc, function(xz) {
+      ab<-t(xpathSApply(xz, paste0("."), xmlAttrs))
+      ac<-t(xpathSApply(xz, paste0(".//calculation"), xmlAttrs))
+      ad<-t(xpathSApply(xz, paste0(".//range"), xmlAttrs))
+      ae<-t(xpathSApply(xz, paste0(".//members//member"), xmlAttrs))
+      if(nn==1) {data.frame( ac, ab, ae)} else{data.frame(ab,ad,ae)}
+    }), fill=TRUE)})
+  names(ca)<-c('Parameters', unlist(xpathSApply(proc[[xy]], ".//datasource", xmlGetAttr, "caption")[2:nds]))
+  # Clean the caption
+  ca<-lapply(ca, function(xz) {
+    library(data.table)
+    xz[is.na(caption), caption:=gsub("\\[|\\]","",name)]
+    xz[,caption:=paste0("[",caption,"]")]
   })
+  return(ca)
 }
 
+# Get list of parameters from the Tableau workbook
+# Not separately needed
+get_parameter<-function(proc=rootnode){
+  nodenames<-sapply(1:length(xmlChildren(proc)), function(x) {#print(x)
+    xmlName(proc[[x]])})
+  xy<-which(nodenames=='datasources')
+  cc<-getNodeSet(proc[[xy]][[1]], ".//column")
+  data.table::rbindlist(lapply(cc, function(xz) {
+    ab<-t(xpathSApply(xz, paste0("."), xmlAttrs))
+    ad<-t(xpathSApply(xz, paste0(".//range"), xmlAttrs))
+    ae<-t(xpathSApply(xz, paste0(".//members//member"), xmlAttrs))
+    data.frame(ab,ad,ae)}),fill=TRUE)
+}
+
+
 # This function creates the folder structure used in Tableau
-get_folder<-function(){
-  cc<-getNodeSet(rootnode[[3]], ".//folder")
+get_folder<-function(proc=rootnode){
+  # Get the node names & find which one is datasource
+  nodenames<-sapply(1:length(xmlChildren(proc)), function(x) {#print(x)
+    xmlName(proc[[x]])})
+  xy<-which(nodenames=='datasources')
+  cc<-getNodeSet(proc[[xy]], ".//folder")
   data.table::rbindlist(lapply(cc, function(x) {
     r<-t(xpathSApply(x, ".", xmlAttrs)) # works
     #s<-xpathSApply(x, ".", xmlGetAttr, "name") #not works
@@ -98,8 +121,11 @@ write_to_excel<-function(template='C:\\Users\\User_2\\Documents\\01_Okaki\\02_CP
 
 
 # This function gets the list of actions and associated attributes in the workbook
-get_actions<-function(){
-  cc<-getNodeSet(rootnode[[5]], ".//action")
+get_actions<-function(proc=rootnode){
+  nodenames<-sapply(1:length(xmlChildren(proc)), function(x) {#print(x)
+    xmlName(proc[[x]])})
+  xy<-which(nodenames=='actions')
+  cc<-getNodeSet(proc[[xy]], ".//action")
   #x<-cc[[1]]
   z<-data.table::rbindlist(lapply(cc, function(x) {
     y<-t(xpathSApply(x, ".", xmlAttrs))
@@ -113,15 +139,58 @@ get_actions<-function(){
 
 
 # This function gets the list of worksheets and their X,Y axes
-get_worksheet<-function(){
-  cc<-getNodeSet(rootnode[[6]], ".//worksheet")
-  #x<-cc[[1]]
-  z<-data.table::rbindlist(lapply(cc, function(x) {
-    y<-t(xpathSApply(x, ".", xmlAttrs))
-    title<-paste(t(xpathSApply(x, ".//layout-options//title//formatted-text//run", xmlValue)), collapse='') # Need to be cleaned
-    tooltip<-t(xpathSApply(x, ".//table//tooltip-style", xmlAttrs)) #works
-    cols<-xpathSApply(x, ".//table//cols", xmlValue) # Needs cleaning
-    rows<-xpathSApply(x, ".//table//rows", xmlValue) # Needs cleaning
-    data.frame(y,title, tooltip, cols, rows)
-  }),fill = TRUE)
+get_worksheets<-function(proc=rootnode){
+  # get worksheet function
+  get_worksheet<-function(proc){
+    nodenames<-sapply(1:length(xmlChildren(proc)), function(x) {#print(x)
+      xmlName(proc[[x]])})
+    xy<-which(nodenames=='worksheets')
+    cc<-getNodeSet(proc[[xy]], ".//worksheet")
+    #x<-cc[[1]]
+    z<-data.table::rbindlist(lapply(cc, function(x) {
+      y<-t(xpathSApply(x, ".", xmlAttrs))
+      title<-paste(t(xpathSApply(x, ".//layout-options//title//formatted-text//run", xmlValue)), collapse='') # Need to be cleaned
+      tooltip<-t(xpathSApply(x, ".//table//tooltip-style", xmlAttrs)) #works
+      cols<-xpathSApply(x, ".//table//cols", xmlValue) # Needs cleaning
+      rows<-xpathSApply(x, ".//table//rows", xmlValue) # Needs cleaning
+      data.frame(y,title, tooltip, cols, rows)
+    }),fill = TRUE)}
+  
+  dsource<-get_properties(xmlfile = proc)
+  cln<-dsource[,paste0("[",name,"].")]
+  wbs<-get_worksheet(proc)
+  wbs[]<-lapply(wbs, as.character)
+  wbs[,rows:=lapply(wbs[,rows], function(x) {
+    for(ii in cln){x<-gsub(ii,"",x, fixed = TRUE)}
+    return(x)})]
+  wbs[,cols:=lapply(wbs[,cols], function(x) {
+    for(ii in cln){x<-gsub(ii,"",x, fixed = TRUE)}
+    return(x)})]
+  wbs[,title:=lapply(wbs[,title], function(x) {
+    for(ii in cln){x<-gsub(ii,"",x, fixed = TRUE)}
+    return(x)})]
+  ab<-get_vars()
+  cb<-ab[[5]]
+  
+  wbs[,rows:=lapply(wbs[,rows], function(x) {
+    for(ii in 1:nrow(cb)){x<-gsub(gsub("\\[|\\]", "",cb[ii,name]),gsub("\\[|\\]", "",cb[ii,caption]),x, fixed = TRUE)}
+    return(x)})]
+  wbs[,cols:=lapply(wbs[,cols], function(x) {
+    for(ii in 1:nrow(cb)){x<-gsub(gsub("\\[|\\]", "",cb[ii,name]),gsub("\\[|\\]", "",cb[ii,caption]),x, fixed = TRUE)}
+    return(x)})]
+  wbs[,title:=lapply(wbs[,title], function(x) {
+    for(ii in 1:nrow(cb)){x<-gsub(gsub("\\[|\\]", "",cb[ii,name]),gsub("\\[|\\]", "",cb[ii,caption]),x, fixed = TRUE)}
+    return(x)})]
+  
+  return(wbs)
+}
+
+# Get properties of datasources
+get_properties<-function(xmlfile=rootnode){
+  nodenames<-sapply(1:length(xmlChildren(xmlfile)), function(x) {#print(x)
+    xmlName(xmlfile[[x]])})
+  xy<-which(nodenames=='datasources')
+  dsources<-t(xpathSApply(xmlfile[[xy]], ".//datasource", xmlAttrs))
+  caption<-cbind(xpathSApply(xmlfile[[xy]], ".//datasource", xmlGetAttr, "caption"))
+  data.table::data.table(data.frame(caption,dsources))
 }
