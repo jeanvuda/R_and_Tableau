@@ -6,8 +6,10 @@ doc <- xmlParse(file = wb, useInternalNodes = T)
 
 ## Select the nodes we want to update
 nodes <- getNodeSet(doc, "//workbook//datasource//column//calculation")
-
 ## For each node, apply gsub on the content of the node
+
+form1<-t(xpathSApply(n, '.', xmlAttrs))[2]
+
 lapply(nodes, function(n) {
   n<-nodes[[36]]
   #xpathSApply(n, '.', xmlAttrs)
@@ -16,7 +18,7 @@ lapply(nodes, function(n) {
   #xmlAttrs(n) <- gsub(as.character(form1), as.character(form2), xmlAttrs(n), fixed = TRUE)
   
   xpathSApply(n, ".", xmlGetAttr, "formula")
-  xpathSApply(n, "//calculation//formula", xmlValue)
+  xpathSApply(n, ".//formula", xmlV)
 })
 
 saveXML(doc, file='C:\\Users\\User_2\\Documents\\01_Okaki\\10_Test\\xml testing\\sample_w.twb')

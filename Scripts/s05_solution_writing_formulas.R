@@ -14,6 +14,12 @@ doc <- xmlParse(file = wb1, useInternalNodes = T)
 nodes <- getNodeSet(doc, "//workbook//datasource//column")
 
 
+# Revert formulas
+lst<-data.table(lst)
+lst[,nformula2:=lapply(lst[,nformula2], function(y){
+  for(i in c(1:nrow(cb))){y<-gsub(cb[i,caption], cb[i,name], y, fixed=TRUE)}
+  return(y)})]
+
 # Replace formulas
 for(i in c(1:nrow(lst))){ #print(lst$var[i])
   lapply(nodes, function(n){
@@ -25,5 +31,5 @@ for(i in c(1:nrow(lst))){ #print(lst$var[i])
     } }) }
 
 # Write the file back  
-saveXML(doc, file='C:\\Users\\User_2\\Documents\\01_Okaki\\10_Test\\xml testing\\sample_w.twb')
+saveXML(doc, file='C:\\Users\\User_2\\Documents\\01_Okaki\\10_Test\\xml testing\\sample_w1.twb')
 

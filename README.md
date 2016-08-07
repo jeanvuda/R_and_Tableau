@@ -6,6 +6,9 @@ Feel free to modify and use it for your own use. If I find enough time, I might 
 
 Please feel free to add any functions you may have developed. 
 
+You can get these functions in your R session by just running this line of code:
+`source("https://raw.githubusercontent.com/jeanvuda/R_and_Tableau/master/Scripts/s01_Functions.R")`
+
 Here the list of features I am planning to explore and add:
 
 + Get the list of actions, workbook properties, rows-columns details, etc
