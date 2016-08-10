@@ -65,7 +65,7 @@ get_vars<-function(proc=rootnode){
       ac<-t(xpathSApply(xz, paste0(".//calculation"), xmlAttrs))
       ad<-t(xpathSApply(xz, paste0(".//range"), xmlAttrs))
       ae<-t(xpathSApply(xz, paste0(".//members//member"), xmlAttrs))
-      if(nn==1) {data.frame( ac, ab, ae)} else{data.frame(ab,ad,ae)}
+      if(nn==1) {data.frame( ac, ab, ae)} else{data.frame(ab,ad,ae, ac)}
     }), fill=TRUE)})
   names(ca)<-c('Parameters', unlist(xpathSApply(proc[[xy]], ".//datasource", xmlGetAttr, "caption")[2:nds]))
   # Clean the caption
